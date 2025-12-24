@@ -1,0 +1,6 @@
+node_modules/
+.env
+minio-data/
+.DS_Store
+minio
+*.log

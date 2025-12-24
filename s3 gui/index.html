@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="hu">
+
+<head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E📦%3C/text%3E%3C/svg%3E" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>S3 File Manager</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
+</head>
+
+<body>
+    <div id="app">
+        <!-- Login Screen -->
+        <div id="login-screen" class="screen active">
+            <div class="login-container">
+                <div class="login-header">
+                    <div class="logo-icon">📦</div>
+                    <h1>S3 File Manager</h1>
+                    <p>Csatlakozás S3-kompatibilis szerverhez</p>
+                </div>
+
+                <form id="login-form" class="login-form">
+                    <div class="form-group">
+                        <label for="endpoint">
+                            <span class="icon">🌐</span>
+                            Endpoint URL
+                        </label>
+                        <input type="text" id="endpoint" placeholder="http://localhost:9000" required />
+                        <span class="hint">pl. http://localhost:9000, http://localhost:3000/s3</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="access-key">
+                            <span class="icon">🔑</span>
+                            Access Key
+                        </label>
+                        <input type="text" id="access-key" placeholder="Access Key ID" required />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="secret-key">
+                            <span class="icon">🔐</span>
+                            Secret Key
+                        </label>
+                        <input type="password" id="secret-key" placeholder="Secret Access Key" required />
+                        <button type="button" class="toggle-password" id="toggle-secret">👁️</button>
+                    </div>
+
+                    <div class="form-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="remember-credentials" />
+                            <span class="checkbox-custom"></span>
+                            Bejelentkezési adatok megjegyzése
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn-primary" id="connect-btn">
+                        <span class="btn-text">Csatlakozás</span>
+                        <span class="btn-loader" style="display: none;">
+                            <span class="spinner"></span>
+                        </span>
+                    </button>
+
+                    <div id="login-error" class="error-message" style="display: none;"></div>
+                </form>
+
+                <div class="login-footer">
+                    <p>Támogatott: MinIO, LocalStack, Ceph, és más S3-kompatibilis szolgáltatások</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main App Screen -->
+        <div id="main-screen" class="screen">
+            <header class="app-header">
+                <div class="header-left">
+                    <div class="logo">📦 S3 Manager</div>
+                    <div class="connection-info" id="connection-info"></div>
+                </div>
+                <div class="header-right">
+                    <button class="btn-icon" id="refresh-btn" title="Frissítés">🔄</button>
+                    <button class="btn-icon" id="logout-btn" title="Kijelentkezés">🚪</button>
+                </div>
+            </header>
+
+            <main class="app-main">
+                <!-- Sidebar - Buckets -->
+                <aside class="sidebar">
+                    <div class="sidebar-header">
+                        <h2>Buckets</h2>
+                        <button class="btn-icon btn-small" id="create-bucket-btn" title="Új bucket">➕</button>
+                    </div>
+                    <div class="bucket-list" id="bucket-list">
+                        <!-- Buckets will be loaded here -->
+                    </div>
+                </aside>
+
+                <!-- Content Area -->
+                <section class="content">
+                    <!-- Breadcrumb -->
+                    <div class="breadcrumb-bar">
+                        <nav class="breadcrumb" id="breadcrumb">
+                            <span class="breadcrumb-item">Válassz egy bucket-et</span>
+                        </nav>
+                        <div class="content-actions">
+                            <button class="btn-secondary" id="upload-btn" disabled>
+                                <span>📤</span> Feltöltés
+                            </button>
+                            <button class="btn-secondary" id="create-folder-btn" disabled>
+                                <span>📁</span> Új mappa
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- File List -->
+                    <div class="file-list-container">
+                        <div class="file-list-header">
+                            <div class="file-col file-name">Név</div>
+                            <div class="file-col file-size">Méret</div>
+                            <div class="file-col file-date">Módosítva</div>
+                            <div class="file-col file-actions">Műveletek</div>
+                        </div>
+                        <div class="file-list" id="file-list">
+                            <div class="empty-state" id="empty-state">
+                                <div class="empty-icon">📂</div>
+                                <p>Válassz egy bucket-et a bal oldali listából</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Drop Zone Overlay -->
+                    <div class="drop-zone" id="drop-zone">
+                        <div class="drop-zone-content">
+                            <div class="drop-icon">📤</div>
+                            <p>Húzd ide a fájlokat a feltöltéshez</p>
+                        </div>
+                    </div>
+                </section>
+            </main>
+
+            <!-- Upload Progress -->
+            <div class="upload-progress" id="upload-progress" style="display: none;">
+                <div class="upload-progress-header">
+                    <span>Feltöltés folyamatban...</span>
+                    <button class="btn-icon btn-small" id="close-progress">✕</button>
+                </div>
+                <div class="upload-progress-list" id="upload-progress-list"></div>
+            </div>
+        </div>
+
+        <!-- Modals -->
+        <div class="modal-overlay" id="modal-overlay" style="display: none;">
+            <div class="modal" id="modal">
+                <div class="modal-header">
+                    <h3 id="modal-title">Modal Title</h3>
+                    <button class="btn-icon btn-small modal-close" id="modal-close">✕</button>
+                </div>
+                <div class="modal-body" id="modal-body">
+                    <!-- Modal content will be inserted here -->
+                </div>
+                <div class="modal-footer" id="modal-footer">
+                    <button class="btn-secondary" id="modal-cancel">Mégse</button>
+                    <button class="btn-primary" id="modal-confirm">OK</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Container -->
+        <div class="toast-container" id="toast-container"></div>
+
+        <!-- Hidden file input -->
+        <input type="file" id="file-input" multiple style="display: none;" />
+    </div>
+    <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>
